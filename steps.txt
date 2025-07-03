@@ -1,5 +1,0 @@
-ipv6 = curl -6 icanhazip.com
-startTunnel(ipv6)
-  - registers ipv6 with the local tunnel
-
-
