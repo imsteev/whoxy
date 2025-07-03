@@ -11,9 +11,12 @@ import (
 
 func main() {
 
-	clerkIntegration := &clerk.ClerkIntegration{}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("whoxy"))
+	})
 
 	http.HandleFunc("/clerk", func(w http.ResponseWriter, r *http.Request) {
+		clerkIntegration := &clerk.ClerkIntegration{}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -35,6 +38,7 @@ func main() {
 				req.Header.Add(key, value)
 			}
 		}
+		req.Header.Add("X-Whoxy-Integration", "clerk")
 
 		// Make the request
 		client := &http.Client{}
