@@ -51,7 +51,9 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	if err := http.ListenAndServe(":9000", nil); err != nil {
+	addr := ":9000"
+	log.Printf("listening on %s\n", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal(err)
 	}
 }

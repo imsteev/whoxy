@@ -1,31 +1,37 @@
 package clerk
 
-import "encoding/json"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
 
-var (
-	config = map[string]string{
-		"2600:4040:a734:e600:a512:d9b:81d7:3615":  "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-		"2600:4040:a734:e600:1c17:e974:645d:bb65": "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-		"2600:4040:a734:e600:e8da:7217:5ccd:b4d2": "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-		"fd07:b51a:cc66:0:a617:db5e:ab7:e9f1":     "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-		"fd7a:115c:a1e0::5e01:8120":               "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-		"2600:4040:a734:e600:9841:a8e3:167a:e21e": "https://thirty-poems-warn.loca.lt/webhooks/clerk",
-	}
+	"github.com/redis/go-redis/v9"
 )
 
 type ClerkIntegration struct {
 }
 
 func (c *ClerkIntegration) GetDestination(data []byte) (string, error) {
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+	defer redisClient.Close()
+
 	var event ClerkEvent
 	if err := json.Unmarshal(data, &event); err != nil {
 		return "", err
 	}
+
 	ip := event.EventAttributes.HTTPRequest.ClientIP
-	if dest, ok := config[ip]; ok {
-		return dest, nil
+	dest, err := redisClient.Get(context.Background(), ip).Result()
+	if err != nil {
+		return "", err
 	}
-	return "", nil
+	fmt.Println(dest)
+	return dest, nil
 }
 
 type ClerkEvent struct {
