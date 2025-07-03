@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -63,6 +64,35 @@ func main() {
 		defer resp.Body.Close()
 
 		w.WriteHeader(resp.StatusCode)
+	})
+
+	http.HandleFunc("POST /mappings", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var requests []struct {
+			ClientIP    string `json:"client_ip"`
+			Destination string `json:"destination"`
+			ServiceName string `json:"service_name"`
+		}
+
+		if err := json.Unmarshal(body, &requests); err != nil {
+			log.Fatal(err)
+		}
+
+		for _, request := range requests {
+			redisClient.Set(context.Background(), request.ServiceName+":"+request.ClientIP, request.Destination, 0)
+		}
+	})
+
+	// DELETE /mappings/clerk/12.34.56.78
+	http.HandleFunc("DELETE /mappings/:service_name/:client_ip", func(w http.ResponseWriter, r *http.Request) {
+		serviceName := r.URL.Query().Get("service_name")
+		clientIP := r.URL.Query().Get("client_ip")
+		redisClient.Del(context.Background(), serviceName+":"+clientIP)
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	addr := ":" + cfg.Port
