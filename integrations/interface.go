@@ -16,5 +16,4 @@ type Integration interface {
 var (
 	_ Integration = (*clerk.ClerkIntegration)(nil)
 	// Add more integrations here
-	// Plugin system?
 )
