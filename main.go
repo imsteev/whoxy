@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"slices"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/imsteev/whoxy/integrations/clerk"
@@ -14,8 +13,8 @@ import (
 )
 
 type Config struct {
-	Port     string `env:"PORT"`
-	RedisUrl string `env:"REDIS_URL"`
+	Port     string `env:"PORT,required"`
+	RedisUrl string `env:"REDIS_URL,required"`
 }
 
 type RoutingRequest struct {
@@ -38,11 +37,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	redisOpts.OnConnect = func(ctx context.Context, cn *redis.Conn) error {
-		log.Printf("connected to redis\n")
-		return nil
-	}
-
 	redisClient := redis.NewClient(redisOpts)
 
 	clerkIntegration := &clerk.ClerkIntegration{}
@@ -58,7 +52,7 @@ func main() {
 		serviceName := c.Param("service")
 		log.Printf("Processing request for service: %s\n", serviceName)
 
-		eventKey, err := clerkIntegration.GetEventKey(c.Request)
+		eventKey, err := clerkIntegration.GetEventKey(c.Request.Clone(context.Background()))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -118,16 +112,7 @@ func main() {
 		c.Status(http.StatusNoContent)
 	})
 
-	port := cfg.Port
-	if port == "" {
-		port = "9000"
-	}
-
-	if _, err := strconv.Atoi(port); err != nil {
-		log.Fatal("Invalid port number")
-	}
-
-	addr := ":" + port
+	addr := ":" + cfg.Port
 	log.Printf("listening on %s\n", addr)
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
