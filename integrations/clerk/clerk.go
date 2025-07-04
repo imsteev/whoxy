@@ -1,6 +1,7 @@
 package clerk
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 )
@@ -9,8 +10,9 @@ type ClerkIntegration struct {
 }
 
 func (c *ClerkIntegration) GetEventKey(r *http.Request) (string, error) {
+	clonedReq := r.Clone(context.Background())
 	var event ClerkEvent
-	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+	if err := json.NewDecoder(clonedReq.Body).Decode(&event); err != nil {
 		return "", err
 	}
 	ip := event.EventAttributes.HTTPRequest.ClientIP

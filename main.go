@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"log"
 	"net/http"
 	"slices"
@@ -59,8 +58,7 @@ func main() {
 		serviceName := c.Param("service")
 		log.Printf("Processing request for service: %s\n", serviceName)
 
-		clonedReq := c.Request.Clone(context.Background())
-		eventKey, err := clerkIntegration.GetEventKey(clonedReq)
+		eventKey, err := clerkIntegration.GetEventKey(c.Request)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -72,12 +70,7 @@ func main() {
 			return
 		}
 
-		body, err := io.ReadAll(c.Request.Body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		forwardResp, err := ForwardPostRequest(c.Request, destinationUrl, body)
+		forwardResp, err := ForwardPostRequest(c.Request, destinationUrl)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
