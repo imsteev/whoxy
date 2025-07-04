@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"slices"
@@ -58,7 +59,7 @@ func main() {
 		serviceName := c.Param("service")
 		log.Printf("Processing request for service: %s\n", serviceName)
 
-		body, err := c.GetRawData()
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
