@@ -1,21 +1,32 @@
 package clerk
 
 import (
-	"context"
 	"encoding/json"
-
-	"github.com/redis/go-redis/v9"
+	"net/http"
 )
 
 type ClerkIntegration struct {
-	Redis *redis.Client
 }
 
-func (c *ClerkIntegration) GetDestination(data []byte) (string, error) {
+func (c *ClerkIntegration) GetEventKey(r *http.Request) (string, error) {
 	var event ClerkEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		return "", err
 	}
 	ip := event.EventAttributes.HTTPRequest.ClientIP
-	return c.Redis.Get(context.Background(), ip).Result()
+	return ip, nil
+}
+
+type ClerkEvent struct {
+	Type            string          `json:"type"`
+	EventAttributes EventAttributes `json:"event_attributes"`
+}
+
+type EventAttributes struct {
+	HTTPRequest HTTPRequest `json:"http_request"`
+}
+
+type HTTPRequest struct {
+	ClientIP  string `json:"client_ip"`
+	UserAgent string `json:"user_agent"`
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,10 +18,12 @@ type Config struct {
 	RedisUrl string `env:"REDIS_URL"`
 }
 
-type MappingRequest struct {
-	InternalSlug string `json:"internal_slug"`
-	ExternalSlug string `json:"external_slug"`
+type RoutingRequest struct {
+	EventKey       string `json:"event_key"`
+	DestinationUrl string `json:"destination_url"`
 }
+
+var supportedServices = []string{"clerk"}
 
 func main() {
 	var cfg Config
@@ -42,9 +45,7 @@ func main() {
 
 	redisClient := redis.NewClient(redisOpts)
 
-	clerkIntegration := &clerk.ClerkIntegration{
-		Redis: redisClient,
-	}
+	clerkIntegration := &clerk.ClerkIntegration{}
 
 	r := gin.Default()
 
@@ -52,7 +53,8 @@ func main() {
 		c.String(http.StatusOK, "whoxy")
 	})
 
-	r.POST("/:service", func(c *gin.Context) {
+	// webhooks are forwarded to this endpoint
+	r.POST("/webhooks/:service", func(c *gin.Context) {
 		serviceName := c.Param("service")
 		log.Printf("Processing request for service: %s\n", serviceName)
 
@@ -62,49 +64,64 @@ func main() {
 			return
 		}
 
-		dest, err := clerkIntegration.GetDestination(body)
+		eventKey, err := clerkIntegration.GetEventKey(c.Request)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		req, err := ForwardPostRequest(c.Request, dest, body)
+		destinationUrl, err := redisClient.Get(context.Background(), serviceName+":"+eventKey).Result()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		resp, err := http.DefaultClient.Do(req)
+		forwardReq, err := ForwardPostRequest(c.Request, destinationUrl, body)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		defer resp.Body.Close()
+		forwardResp, err := http.DefaultClient.Do(forwardReq)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer forwardResp.Body.Close()
 
-		c.Status(resp.StatusCode)
+		c.Status(forwardResp.StatusCode)
 	})
 
-	r.POST("/:service/mappings", func(c *gin.Context) {
+	r.POST("/webhooks/:service/routes", func(c *gin.Context) {
 		service := c.Param("service")
 
-		var requests []MappingRequest
+		if !slices.Contains(supportedServices, service) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "service not supported"})
+			return
+		}
+
+		var requests []RoutingRequest
 		if err := c.ShouldBindJSON(&requests); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		for _, request := range requests {
-			redisClient.Set(context.Background(), service+":"+request.InternalSlug, request.ExternalSlug, 0)
+			redisClient.Set(context.Background(), service+":"+request.EventKey, request.DestinationUrl, 0)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "mappings created successfully"})
 	})
 
-	r.DELETE("/:service/mappings/:internal_slug", func(c *gin.Context) {
+	r.DELETE("/webhooks/:service/routes/:event_key", func(c *gin.Context) {
 		service := c.Param("service")
-		internalSlug := c.Param("internal_slug")
+		eventKey := c.Param("event_key")
 
-		err := redisClient.Del(context.Background(), service+":"+internalSlug).Err()
+		if !slices.Contains(supportedServices, service) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "service not supported"})
+			return
+		}
+
+		err := redisClient.Del(context.Background(), service+":"+eventKey).Err()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
