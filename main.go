@@ -76,17 +76,11 @@ func main() {
 			return
 		}
 
-		forwardReq, err := ForwardPostRequest(c.Request, destinationUrl, body)
+		forwardResp, err := ForwardPostRequest(c.Request, destinationUrl, body)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		forwardResp, err := http.DefaultClient.Do(forwardReq)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		defer forwardResp.Body.Close()
 
 		c.Status(forwardResp.StatusCode)
 	})
