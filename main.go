@@ -59,13 +59,8 @@ func main() {
 		serviceName := c.Param("service")
 		log.Printf("Processing request for service: %s\n", serviceName)
 
-		body, err := io.ReadAll(c.Request.Body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		eventKey, err := clerkIntegration.GetEventKey(c.Request)
+		clonedReq := c.Request.Clone(context.Background())
+		eventKey, err := clerkIntegration.GetEventKey(clonedReq)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -77,6 +72,11 @@ func main() {
 			return
 		}
 
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		forwardResp, err := ForwardPostRequest(c.Request, destinationUrl, body)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
