@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "whoxy-app",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-13",
+  "kv_namespaces": [
+    {
+      "binding": "event_sinks",
+      "id": "362242546f864e2781ba2930539254f7"
+    }
+  ],
+  "dev": {
+    "port": 8787,
+    "local_protocol": "http",
+    // see https://github.com/cloudflare/workers-sdk/issues/9328
+    // i was seeing the wrangler dev server crash whenever a fetch is made to localhost.
+    "ip": "127.0.0.1"
+  },
+  "env": {
+    "stage": {
+      "kv_namespaces": [
+        {
+          "binding": "event_sinks",
+          "id": "ce310d02bb0142b28884328305be2505"
+        }
+      ]
+    },
+    "prod": {
+      "kv_namespaces": [
+        {
+          "binding": "event_sinks",
+          "id": "ca9aef85be65458b952d4eaf809a16c2"
+        }
+      ]
+    }
+  }
+}

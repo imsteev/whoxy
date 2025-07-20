@@ -1,0 +1,21 @@
+{
+  "name": "whoxy-app",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy:stage": "npx wrangler deploy --env stage --minify",
+    "deploy:prod": "npx wrangler deploy --env prod --minify",
+    "gen": "npx wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.0",
+    "hono": "^4.8.4",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "wrangler": "^4.25.0"
+  }
+}

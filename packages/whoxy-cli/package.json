@@ -1,0 +1,19 @@
+{
+  "name": "whoxy-cli",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lt": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/localtunnel": "^2.0.4",
+    "localtunnel": "^2.0.2"
+  }
+}
