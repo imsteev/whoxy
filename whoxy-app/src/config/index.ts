@@ -13,5 +13,11 @@ interface EventFilter {
 
 export const config: { eventFilters: EventFilter[] } = {
   // Add your config here.
-  eventFilters: [],
+  eventFilters: [
+    {
+      shouldDeliverTo: (evt, service, sink) => {
+        return false;
+      },
+    },
+  ],
 };
