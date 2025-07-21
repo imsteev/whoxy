@@ -17,14 +17,6 @@
     "ip": "127.0.0.1"
   },
   "env": {
-    "stage": {
-      "kv_namespaces": [
-        {
-          "binding": "event_sinks",
-          "id": "ce310d02bb0142b28884328305be2505"
-        }
-      ]
-    },
     "prod": {
       "kv_namespaces": [
         {

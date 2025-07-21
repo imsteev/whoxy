@@ -20,9 +20,6 @@ export const api = {
   deleteEventSink(id: string) {
     return fetch(`${WHOXY_URL}/api/event_sinks/${id}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
   },
 };
