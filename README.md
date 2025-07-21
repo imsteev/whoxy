@@ -1,27 +1,3 @@
-```txt
-npm install
-npm run dev
-```
+architecture
 
-```txt
-npm run deploy
-```
-
-[For generating/synchronizing types based on your Worker configuration run](https://developers.cloudflare.com/workers/wrangler/commands/#types):
-
-```txt
-npm run cf-typegen
-```
-
-Pass the `CloudflareBindings` as generics when instantiation `Hono`:
-
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>();
-```
-
-DEVELOPMENT
-
-```
-npx wrangler kv key list --binding event_sinks
-```
+<img width="751" height="531" alt="Screenshot 2025-07-20 at 11 39 21 PM" src="https://github.com/user-attachments/assets/4dfaa1ac-0ef8-4d00-a121-0b0aead3ae69" />
